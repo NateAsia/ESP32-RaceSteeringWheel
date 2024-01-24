@@ -1,6 +1,7 @@
 /* --------------------- Standard / ESP Specific Imports ------------------ */ // FYI use (command + click) on a import or variable to goto its definition for more info 
   #include <stdio.h>                // Yummy OS Stuff
   #include <stdlib.h>               // Alot of helpful yummy libs
+  #include <EEPROM.h>               // Library to read and write from flash memory
   #include "freertos/FreeRTOS.h"    // Task Management
   #include "freertos/task.h"        // Task Management
   #include "freertos/queue.h"       // Task Management 
@@ -14,10 +15,9 @@
   #include "constants.h"    // Project Constants    #TODO #1 in this file :) ***** ***** ***** *****
 
   static const twai_filter_config_t   f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();   // We can filter our CAN reception to specific addresses only (later)
-  static const twai_timing_config_t   t_config = TWAI_TIMING_CONFIG_1MBITS();     // CAN SPEED (must change to 1000Kbits to work with our MoTeC System)         SPEED... I AM SPEED
+  static const twai_timing_config_t   t_config = TWAI_TIMING_CONFIG_1MBITS();       // CAN SPEED (must change to 1000Kbits to work with our MoTeC System)         SPEED... I AM SPEED
   static const twai_general_config_t  g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)TX_GPIO_NUM, (gpio_num_t)RX_GPIO_NUM, TWAI_MODE_NO_ACK);
 
-  static SemaphoreHandle_t rx_sem;
   static SemaphoreHandle_t tx_sem;
 
 
@@ -33,14 +33,32 @@
     bool      button_4  = false;     // Matches to the status of BUTTON_4_PIN :)
 
     uint8_t   button_status = 0b00000000;   // = 0
-  
-    uint16_t  pot_x     = 0x0000;      // Mapped from 0 - 255 of the status of POT_1_PIN
-    uint8_t   pot_x_h   = 0x00;
-    uint8_t   pot_x_l   = 0x00;
 
-    uint16_t  pot_y     = 0x0000;
-    uint8_t   pot_y_h   = 0x00;
-    uint8_t   pot_y_l   = 0x00;
+    ROTARY_BTN left_rty_btn   = { 
+      .state            = false,
+      .last_state       = false, 
+      .time_hold_start  = 0, 
+      .mode             = 0, 
+      .num_of_modes     = 4};
+    ROTARY_BTN right_rty_btn  = {
+      .state            = false,
+      .last_state       = false, 
+      .time_hold_start  = 0, 
+      .mode             = 0, 
+      .num_of_modes     = 4};
+    bool rty_update_mode      = false;
+    bool dual_hold            = false;
+    bool holding_too_long     = false;
+    long hold_start_time      = 0;
+    ROTARY_BTN *r_list[ROTARY_BTN_LIST_SIZE] = {&left_rty_btn, &right_rty_btn};
+  
+    uint16_t  pot_1     = 0x0000;      // Mapped from 0 - 255 of the status of POT_1_PIN
+    uint8_t   pot_1_h   = 0x00;
+    uint8_t   pot_1_l   = 0x00;
+
+    uint16_t  pot_2     = 0x0000;      // Mapped from 0 - 255 of the status of POT_2_PIN
+    uint8_t   pot_2_h   = 0x00;
+    uint8_t   pot_2_l   = 0x00;
 
 
 /* --------------------------- Tasks and Functions -------------------------- */
@@ -53,16 +71,65 @@ void setup_io(){
   pinMode(BUTTON_3_PIN, INPUT_PULLUP);
   pinMode(BUTTON_4_PIN, INPUT_PULLUP);
 
-  pinMode(POT_X_PIN, INPUT);
-  pinMode(POT_Y_PIN, INPUT);
+  pinMode(ROTARY_BTN_1_PIN, INPUT_PULLUP);
+  pinMode(ROTARY_BTN_2_PIN, INPUT_PULLUP);
 
-
-  // TODO: Setup IO's
-    // ex: pinMode(LED_1_PIN, OUTPUT);
-
+  pinMode(POT_1_PIN, INPUT);
+  pinMode(POT_2_PIN, INPUT);
 }
 
-// Thread to update the variables corresponding to steering wheel inputs
+void rotary_input_check(){
+
+  left_rty_btn.state  = !digitalRead(ROTARY_BTN_1_PIN);
+  right_rty_btn.state = !digitalRead(ROTARY_BTN_2_PIN);
+
+  // Entering and Exiting Rotary Update Mode
+    if(left_rty_btn.state & left_rty_btn.state){
+      if(!dual_hold){
+        dual_hold = true;
+        hold_start_time = millis();
+      }
+      else{
+        if(!holding_too_long && millis() - hold_start_time >= ROTARY_WAIT_TIME){
+          rty_update_mode = !rty_update_mode;
+          holding_too_long = true;
+          if(!rty_update_mode){     // When we exit rotary update mode, update the EEPROM
+              EEPROM.writeByte(RTY_1_EE_LOCATION, left_rty_btn.mode);
+              EEPROM.writeByte(RTY_2_EE_LOCATION, right_rty_btn.mode);
+              EEPROM.commit();
+          }
+        }
+        return;  // if holding both, do not continue reading for mode swichtes
+      }
+    }
+    else{
+      dual_hold = false;
+      holding_too_long = false;
+    }
+
+  // When in Rotary Update Mode, update external modes with a button press (rising edge)
+    if (rty_update_mode){
+      for(int i = 0; i < ROTARY_BTN_LIST_SIZE; i++){
+
+        // Start with debouncing the button
+          if (r_list[i]->last_state != r_list[i]->state){
+            r_list[i]->time_hold_start = millis();
+          }
+        
+        // Once Debounced, add to the mode counter if the button state is high (pressed)
+        if (millis() - r_list[i]->time_hold_start > RTY_BTN_DEBOUNCE){
+          r_list[i]->mode += r_list[i]->state;
+
+          if (r_list[i]->mode == r_list[i]->num_of_modes){
+            r_list[i]->mode = 0;
+          }
+        }
+      }
+    }
+}
+
+
+// Thread to update the variables corresponding to steering wheel inputs (every 1ms)
 static void update_input_statuses(void *arg){
 
   
@@ -72,6 +139,8 @@ static void update_input_statuses(void *arg){
       
       // TODO: check on all of the inputs and update the dynamic variables ***** ***** ***** 
 
+      rotary_input_check();
+
       button_1  = !digitalRead(BUTTON_1_PIN);   // (!) since we are using a pullup network on buttons
       button_2  = !digitalRead(BUTTON_2_PIN);
       button_3  = !digitalRead(BUTTON_3_PIN);
@@ -79,32 +148,16 @@ static void update_input_statuses(void *arg){
     
       button_status = (button_4 << 3) | (button_3 << 2) | (button_2 << 1) | button_1;
 
-      pot_x     = analogReadMilliVolts(POT_X_PIN);        // Returns    12 Bits Total
-      pot_x_h   = (pot_x & 0xFF00) >> 8;        // High Bits  4 Bits get used (out of 8)
-      pot_x_l   = (pot_x & 0x00FF);             // Low Bits   8 Bits
+      pot_1     = analogReadMilliVolts(POT_1_PIN);        // Returns    12 Bits Total
+      pot_1_h   = (pot_1 & 0xFF00) >> 8;        // High Bits  4 Bits get used (out of 8)
+      pot_1_l   = (pot_1 & 0x00FF);             // Low Bits   8 Bits
 
-      pot_y     = analogReadMilliVolts(POT_Y_PIN);
-      pot_y_h   = (pot_y & 0xFF00) >> 8;        // High Bits        /// 00001111
-      pot_y_l   = (pot_y & 0x00FF);             // Low Bits 
+      pot_2     = analogReadMilliVolts(POT_2_PIN);
+      pot_2_h   = (pot_2 & 0xFF00) >> 8;        // High Bits        /// 00001111
+      pot_2_l   = (pot_2 & 0x00FF);             // Low Bits 
 
 
     vTaskDelay(pdMS_TO_TICKS(1));    // This will repeat every 1 ms
-  }
-
-  vTaskDelete(NULL);
-}
-
-static void update_output(void *arg){
-
-  ESP_LOGI(BASE_TAG, "Update Outputs Thread Started");
-  
-  while(1){
-      
-      // TODO: Update any outputs 
-
-        //digitalWrite(LED_1_PIN, led_1_status);
-
-    vTaskDelay(pdMS_TO_TICKS(10));    // This will repeat every 10 ms
   }
 
   vTaskDelete(NULL);
@@ -131,10 +184,10 @@ static void twai_transmit_task(void *arg)
                                     .data_length_code = 5,
                                     .data = {
                                       button_status, 
-                                      pot_x_h, 
-                                      pot_x_l, 
-                                      pot_y_h, 
-                                      pot_y_l
+                                      pot_1_h, 
+                                      pot_1_l, 
+                                      pot_2_h, 
+                                      pot_2_l
                                       } 
                                   };
 
@@ -148,56 +201,14 @@ static void twai_transmit_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static void twai_receive_task(void *arg){
-
-    xSemaphoreTake(rx_sem, portMAX_DELAY);
-    ESP_LOGI(BASE_TAG, "Receive Task Started");
-
-    while(1){
-
-        if (twai_receive(&message, portMAX_DELAY) == ESP_OK); // NOTE: possibly decrease this delay later
-        else {
-            printf("\nFailed to receive message\n");
-            vTaskDelay(1);
-            continue;
-        }
-
-        // Print received message
-          if (message.extd) {
-              printf("\n\nExtended Format\tID: 0x%.08x\t", message.identifier);
-          } else {
-              printf("\n\nStandard Format\tID: 0x%.03x\t", message.identifier);
-          }
-          if (!(message.rtr)) {
-              printf("Data (%d) (hex): ", message.data_length_code);
-              for (int i = 0; i < message.data_length_code; i++) {
-                  printf("0x%.02x ", message.data[i]);
-              }
-          }
-
-        //Process received message
-
-          // Later we will use this section to update status of LEDs on the steering wheel ;)
-        
-        vTaskDelay(1);  // This will allow the CPU to switch to another task :)
-    }
-
-    xSemaphoreGive(rx_sem);   // We should never reach this line :)
-    vTaskDelete(NULL);
-
-}
-
 void app_main(void){
 
-    // Create Semaphore(s)
-    rx_sem = xSemaphoreCreateBinary();  
+    // Create Semaphore(s) 
     tx_sem = xSemaphoreCreateBinary();  
 
     // CREATE THREADS (TASKS)
-    // xTaskCreatePinnedToCore(twai_receive_task,    "TWAI_rx",        4096, NULL, RX_TASK_PRIO,     NULL, tskNO_AFFINITY);
     xTaskCreatePinnedToCore(twai_transmit_task,   "TWAI_tx",        4096, NULL, TX_TASK_PRIO,     NULL, tskNO_AFFINITY);
     xTaskCreatePinnedToCore(update_input_statuses,"UPDATE_INPUTS",  4096, NULL, INPUT_TASK_PRIO,  NULL, tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(update_output,        "UPDATE_OUTPUTS", 4096, NULL, OUTPUT_TASK_PRIO, NULL, tskNO_AFFINITY);
 
     // Install and start TWAI driver            -   This will force the ESP32 to restart if there is a CAN error - good
     ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
@@ -205,11 +216,9 @@ void app_main(void){
     ESP_ERROR_CHECK(twai_start());
     ESP_LOGI(BASE_TAG, "CAN Driver started");
 
-    xSemaphoreGive(rx_sem);                     // Allow Start of RX task   
     xSemaphoreGive(tx_sem);                     // Allow Start of TX task
     vTaskDelay(pdMS_TO_TICKS(100));             
     
-    xSemaphoreTake(rx_sem, portMAX_DELAY);      // Wait for RX Task to complete (never ;) )
     xSemaphoreTake(tx_sem, portMAX_DELAY);      // Wait for TX task to complete (never ;) )
     printf("\nEXITING\n");                      // (we will NEVER reach this line)
 
@@ -219,7 +228,6 @@ void app_main(void){
     ESP_LOGI(BASE_TAG, "CAN Driver Uninstalled");
 
     //Cleanup
-    vSemaphoreDelete(rx_sem);
     vSemaphoreDelete(tx_sem);
 }
 
@@ -228,9 +236,13 @@ void setup(){
   
   // Don't use use Serial.begin --> Assume serial is running on 115200 and use the printf function its MUCH faster
   ESP_LOGI(BASE_TAG, "ESP-STARTING");
+  
   setup_io();
 
-  // TODO: MAYBE?? QUICK LED SHOW WHEN STEERING WHEEL FIRST TURNED ON (this can be done much later)
+  EEPROM.begin(EEPROM_SIZE); // Setup Flash Memory
+
+  left_rty_btn.mode   = EEPROM.readByte(RTY_1_EE_LOCATION);  // Read Last mode of rty_position from memory on boot
+  right_rty_btn.mode  = EEPROM.readByte(RTY_2_EE_LOCATION);  // Read Last mode of rty_position from memory on boot
 
   printf("\n\t\tInitializing CAN\n\n");
   

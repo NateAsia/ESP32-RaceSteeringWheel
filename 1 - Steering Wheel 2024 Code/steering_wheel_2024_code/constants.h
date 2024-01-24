@@ -11,8 +11,7 @@
 
 /* --------------------- ESP-IDF Setup ------------------ */
   // LOG TAGS
-    #define BASE_TAG    "TWAI Listen Only"  
-
+    #define BASE_TAG    "DUKE FSAE - STEERING WHEEL"  
 
 
 /* --------------------- FreeRTOS Setup ------------------ */
@@ -23,37 +22,62 @@
 
 
 /* --------------------- TWAI / CAN Transceiver Setup ------------------ */
-  #define TX_GPIO_NUM       17        // "TX2" on the ESP32-WROOM-32
-  #define RX_GPIO_NUM       16        // "RX2" on the ESP32-WROOM-32
+  #define TX_GPIO_NUM       21        // "TX2" on the ESP32-C3
+  #define RX_GPIO_NUM       20        // "RX2" on the ESP32-C3
 
 
 /* --------------------- Steering Wheel Inputs ------------------ */
   // Buttons
-    #define BUTTON_1_PIN    22        // Location:? Color:? Purpose: DRS
-    #define BUTTON_2_PIN    19   // Location:? Color:? Purpose: Push To Talk
-    #define BUTTON_3_PIN    18   // Location:? Color:? Purpose: Launch Control Engage
-    #define BUTTON_4_PIN    21   // Location:? Color:? Purpose: Dash Control 
+    #define BUTTON_1_PIN    4    // Location:? Color:? Purpose: DRS <-- may be automated
+    #define BUTTON_2_PIN    19   // Location:? Color:? Purpose: Push To Talk <-- direct control
+    #define BUTTON_3_PIN    5    // Location:? Color:? Purpose: Launch Control Engage
+    #define BUTTON_4_PIN    6    // Location:? Color:? Purpose: Dash Control 
   
   // Rotary Switch
-    #define ROTARY_1_PIN        // Location:? Color:? Purpose: Engine Modes
+    #define ROTARY_BTN_LIST_SIZE  2
+    #define ROTARY_BTN_1_PIN      7 // Location: ? Color: ? Purpose: 2 sec hold 
+    #define ROTARY_BTN_2_PIN      10 // Location: ? Color: ? Purpose:  
 
   // Analog Inputs
-    #define POT_X_PIN       4     // Location:? Color:?
-    #define POT_Y_PIN       15    // Location:? Color:?
-    
-    #define POT_1_PIN           // Location:? Color:? Purpose: Clutch LEFT
-    #define POT_2_PIN           // Location:? Color:? Purpose: Clutch RIGHT
+    #define POT_1_PIN 2   // Location:? Color:? Purpose: Clutch LEFT
+    #define POT_2_PIN 3   // Location:? Color:? Purpose: Clutch RIGHT
+
+
 
 
 /* --------------------- Steering Wheel Outputs ------------------ */
 
   // STATUS LEDS
-    #define LED_1_PIN           // Location:? Color:? Purpose: BSPD Status
-    #define LED_2_PIN           // Location:? Color:? Purpose: Steering Wheel Zero
-    #define LED_3_PIN           // Location:? Color:? Purpose: BOTS Status
+    // #define LED_1_PIN           // Location:? Color:? Purpose: BSPD Status
+    // #define LED_2_PIN           // Location:? Color:? Purpose: Steering Wheel Zero
+    // #define LED_3_PIN           // Location:? Color:? Purpose: BOTS Status
     // #define LED_4_PIN     // Location:? Color:? Purpose:?
     // #define LED_5_PIN     // Location:? Color:? Purpose:?
     // #define LED_6_PIN     // Location:? Color:? Purpose:?
 
     #define LED_BUILTIN 2       // Blue / On ESP
+
+/* --------------------- SOFTWARE DEFS ------------------ */
+
+  // TIME
+    #define ROTARY_WAIT_TIME 2000 // 2000 ms
+    #define RTY_BTN_DEBOUNCE 40   //   40 ms
+
+  // EEPROM
+    #define EEPROM_SIZE 512 // Number of bytes we'll use in eeprom
+    #define RTY_1_EE_LOCATION 0
+    #define RTY_2_EE_LOCATION 1
+
+/* --------------------- Structs ------------------ */
+
+  // Rotary BTNs
+    typedef struct ROTARY_BTN_T { 
+      bool    state;
+      bool    last_state;
+      long    time_hold_start;
+      uint8_t mode;
+      uint8_t num_of_modes;
+    } ROTARY_BTN; 
+
+
     

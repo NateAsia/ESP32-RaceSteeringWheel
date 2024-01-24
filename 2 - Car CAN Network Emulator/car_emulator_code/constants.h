@@ -1,10 +1,10 @@
 
 //Example Configurations
-#define RUN_PRE_CHECK           false
+#define RUN_PRE_CHECK           true
 #define NO_OF_MSGS              100
 #define NO_OF_ITERS             3
-#define TX_GPIO_NUM             13
-#define RX_GPIO_NUM             14
+#define TX_GPIO_NUM             10
+#define RX_GPIO_NUM             9
 
 #define IO_TSK_PRIO             8       //IO task priority
 #define TX_TASK_PRIO            8       //Sending task priority
