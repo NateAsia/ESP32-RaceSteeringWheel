@@ -5,19 +5,18 @@ import os
 
 
 
-
-
 class LED(tk.Canvas):
-    def __init__(self, master, size=20, color="red", **kwargs):
+    def __init__(self, master, size=20, color="red", off_color="black", **kwargs):
         super().__init__(master, width=size, height=size, **kwargs)
         self.size = size
         self.color = color
+        self.off_color = off_color
         self.create_oval(size/4, size /4, size, size, fill="black", outline="black")
         self.state = False
         self.update_state()
 
     def update_state(self):
-        fill_color = self.color if self.state else "black"
+        fill_color = self.color if self.state else self.off_color
         self.itemconfig(1, fill=fill_color)
 
     def set_state(self, state):
@@ -27,7 +26,7 @@ class LED(tk.Canvas):
 class SerialButtonReader(tk.Tk):
     def __init__(self, port="", baudrate=115200, **kwargs):
         super().__init__(**kwargs)
-        self.geometry("500x600")
+        self.geometry("600x800")
         self.port = port
         self.baudrate = baudrate
         self.buttons = []
@@ -35,7 +34,8 @@ class SerialButtonReader(tk.Tk):
         self.bars = []
         self.mode_labels = []
         self.labels = []
-        self.textLabels = ["RTY MODE ACTIVE: ", "DUAL HOLD ACTIVE: ", "L MODE: ", "R MODE: "]
+        self.textLabels = ["RTY MODE ACTIVE: ", "DUAL HOLD ACTIVE: ", "L MODE: ", "R MODE: ", "f-1: ", "f-2: "]
+        self.serial_monitor_label = None
         self.connected_led = None
         self.serial_connection = None
         self.setup_ui()
@@ -48,11 +48,9 @@ class SerialButtonReader(tk.Tk):
         connectedFrame = ttk.Frame(self)
         connect_button = tk.Button(connectedFrame, text="Connect", command=self.setup_serial())
         connect_button.grid(row=0, column=1)
-        led = LED(connectedFrame, color="green")
+        led = LED(connectedFrame, color="green", off_color="red")
         led.grid(row=0, column=0)
         self.connected_led = led
-
-        
 
         topOuterFrame = ttk.Frame(self)
 
@@ -68,8 +66,8 @@ class SerialButtonReader(tk.Tk):
         
 
         bottomFrame = ttk.Frame(self)
-        self.customButton("REAR L (6)", "green", row=0, flip=True, frame=bottomFrame)
-        self.customButton("REAR R (7)", "green", row=0, col=2, frame=bottomFrame)
+        self.customButton("REAR L (6)", "lightblue", row=0, flip=True, frame=bottomFrame)
+        self.customButton("REAR R (7)", "lightblue", row=0, col=2, frame=bottomFrame)
 
 
         centerFrame = ttk.Frame(topOuterFrame)
@@ -80,9 +78,9 @@ class SerialButtonReader(tk.Tk):
             maximum=3000, 
             value=1500, 
             mode="determinate",
-            length=170
+            length=270
             )
-        pb.grid(row=0, column=1, padx=10)
+        pb.grid(row=0, column=0, padx=10)
         self.bars.append(pb)
 
         pb = tk.ttk.Progressbar(
@@ -91,16 +89,31 @@ class SerialButtonReader(tk.Tk):
             maximum=3000, 
             value=1500, 
             mode="determinate",
-            length=170
+            length=270
             )
-        pb.grid(row=0, column=0, padx=10)  
+        pb.grid(row=0, column=2, padx=10)  
+        self.bars.append(pb)
+
+        pb = tk.ttk.Progressbar(
+            centerFrame, 
+            orient="vertical", 
+            maximum=3000, 
+            value=1500, 
+            mode="determinate",
+            length=270
+            )
+        pb.grid(row=0, column=1, padx=5)  
         self.bars.append(pb)
 
         for i, text in enumerate(self.textLabels):
             label = tk.Label(bottomFrame, text=text)
             label.grid(row=1+i, column=1, columnspan=2, sticky='s', pady=(10,0) if i == 0 else 0)
             self.labels.append(label)
+
         
+
+        serialMonitorLabel = tk.Label(self, text="PLEASE CONNECT TO STEERING WHEEL")
+        self.serial_monitor_label = serialMonitorLabel
 
         connectedFrame.pack(pady=(10,0))
         topOuterFrame.pack(side=tk.TOP, pady=(50, 10))
@@ -108,6 +121,7 @@ class SerialButtonReader(tk.Tk):
         centerFrame.grid(row=0, column=1, padx=50, sticky=tk.S)
         rightFrame.grid(row=0, column=2, sticky=tk.S)
         bottomFrame.pack(pady=(15,0))
+        serialMonitorLabel.pack(pady=(0,15),side=tk.BOTTOM)
 
     def customButton(self, name:str ="BTN", color:str ="green", flip=False, row=None, col=None,  frame=None):
         if row == None:
@@ -116,7 +130,7 @@ class SerialButtonReader(tk.Tk):
             col = 0
         if not frame:
             frame = self
-        led = LED(frame, size=70, color=color)
+        led = LED(frame, size=100, color=color)
         led.grid(row=row,column= (col+1) if flip else col, padx=0, pady=0)
         button = tk.Button(frame, text=name, state=tk.DISABLED)
         button.grid(row=row, column=col if flip else col+1, padx=0, pady=0)
@@ -162,6 +176,7 @@ class SerialButtonReader(tk.Tk):
         self.after(1, self.read_serial)  # Check for data every 100 milliseconds
 
     def update_ui_status(self, data):
+        self.update_serial_monitor_label(data)
         sections = data.split(':')
         for i, item in enumerate(sections):
             if item.startswith("BTNS"):
@@ -197,7 +212,9 @@ class SerialButtonReader(tk.Tk):
             if i >= len(self.labels): continue
             number = int(state)
             self.labels[i].config(text=self.textLabels[i]+str(number))
-
+    
+    def update_serial_monitor_label(self, serial_in):
+        self.serial_monitor_label.config(text=serial_in)
 
 if __name__ == "__main__":
     app = SerialButtonReader()
