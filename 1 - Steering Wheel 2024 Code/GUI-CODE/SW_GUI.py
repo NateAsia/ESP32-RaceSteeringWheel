@@ -34,7 +34,7 @@ class SerialButtonReader(tk.Tk):
         self.bars = []
         self.mode_labels = []
         self.labels = []
-        self.textLabels = ["RTY MODE ACTIVE: ", "DUAL HOLD ACTIVE: ", "L MODE: ", "R MODE: ", "f-1: ", "f-2: "]
+        self.textLabels = ["RT2Y MODE ACTIVE: ", "DUAL HOLD ACTIVE: ", "L MODE: ", "R MODE: ", "f-1: ", "f-2: "]
         self.serial_monitor_label = None
         self.connected_led = None
         self.serial_connection = None

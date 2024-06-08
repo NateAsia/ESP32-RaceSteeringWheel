@@ -11,7 +11,7 @@
   static const twai_general_config_t  g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)TX_GPIO_NUM, (gpio_num_t)RX_GPIO_NUM, TWAI_MODE_NO_ACK);
   static SemaphoreHandle_t tx_sem;
   
-  twai_message_t message;         // CAN Message Struct
+  twai_message_t message;         // CAN Message  LL;L;;;/Struct    
 
 
 // Functions
@@ -32,12 +32,17 @@ static void twai_transmit_task(void *arg){
       // Just get a feel for this, and we can optimize it later :)
       
         twai_message_t message1 = {
-                                    .identifier = 0x7F9, 
-                                    .data_length_code = 3,
+                                    .identifier = 0x661, 
+                                    .data_length_code = 8,
                                     .data = {
                                       button_status, 
+                                      modes_status,
+                                      screen_btns,
                                       pot_v_h, 
                                       pot_v_l, 
+                                      0,
+                                      0,
+                                      0
                                       } 
                                   };
         
@@ -66,7 +71,7 @@ static void twai_transmit_task(void *arg){
         Serial.print(pot_v);
 
         Serial.print(":MODES:");
-        Serial.print(rty_update_mode);
+        Serial.print(in_rty_update_mode);
         Serial.print("@");
         Serial.print(dual_hold);
         Serial.print("@");
@@ -81,7 +86,7 @@ static void twai_transmit_task(void *arg){
         Serial.print("\n");
 
 
-        // ESP_ERROR_CHECK(twai_transmit(&message1 , portMAX_DELAY));  // Force the ESP to restart if there is a transmitted error
+        ESP_ERROR_CHECK(twai_transmit(&message1 , portMAX_DELAY));  // Force the ESP to restart if there is a transmitted error
 
       digitalWrite(LED_BUILTIN, LOW);
       vTaskDelay(pdMS_TO_TICKS(10));    // Send updates @ 100 Hz

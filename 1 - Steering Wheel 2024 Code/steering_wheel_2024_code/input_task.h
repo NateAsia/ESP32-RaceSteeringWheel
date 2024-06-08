@@ -15,9 +15,13 @@
     bool      btn_rear_1   = false;     
     bool      btn_rear_2   = false;     
 
-    uint8_t   front_btn_status  = 0b00000000;   
-    uint8_t   rear_btn_status   = 0b00000000;   
-    uint8_t   button_status     = 0b00000000;   
+    uint8_t   front_btn_status    = 0b00000000;   
+    uint8_t   rear_btn_status     = 0b00000000; 
+    uint8_t   special_btn_status  = 0b00000000;  
+    uint8_t   button_status       = 0b00000000;  
+    
+    uint8_t   modes_status        = 0b00000000; 
+    uint8_t   screen_btns         = 0b00000000;
 
     ROTARY_BTN left_rty_btn   = { 
       .state            = false,
@@ -33,7 +37,7 @@
       .time_hold_start  = 0, 
       .mode             = 0, 
       .num_of_modes     = 4};
-    bool rty_update_mode      = false;
+    bool in_rty_update_mode   = false;
     bool dual_hold            = false;
     bool holding_too_long     = false;
     long hold_start_time      = 0;
@@ -79,9 +83,9 @@ void setup_io(){
 }
 
 void rotary_update_mode_toggle(){
-  rty_update_mode = !rty_update_mode;
+  in_rty_update_mode = !in_rty_update_mode;
   holding_too_long = true;
-  if(!rty_update_mode){     // When we exit rotary update mode, update the EEPROM
+  if(!in_rty_update_mode){     // When we exit rotary update mode, update the EEPROM
       EEPROM.writeByte(RTY_1_EE_LOCATION, left_rty_btn.mode);
       EEPROM.writeByte(RTY_2_EE_LOCATION, right_rty_btn.mode);
       EEPROM.commit();
@@ -120,12 +124,12 @@ void rotary_input_check(){
       holding_too_long = false;
     }
     
-    if(rty_update_mode & (millis() - last_btn_press > ROTARY_NO_INPUT_TIME)){
+    if(in_rty_update_mode & (millis() - last_btn_press > ROTARY_NO_INPUT_TIME)){
       rotary_update_mode_toggle();
     }
 
   // When in Rotary Update Mode, update external modes with a button press (rising edge)
-    if (rty_update_mode){
+    if (in_rty_update_mode){
       for(int i = 0; i < ROTARY_BTN_LIST_SIZE; i++){
 
         // Start with debouncing the button
@@ -169,16 +173,30 @@ void custom_states(){
       (pot_1>2600) 
       & (pot_2>2600) 
       & left_rty_btn.state 
-      & !rty_update_mode 
+      & !in_rty_update_mode 
       & !dual_hold;           // :P
 
   special_2 = 
       (pot_1>2600) 
       & (pot_2>2600) 
       & right_rty_btn.state 
-      & !rty_update_mode 
+      & !in_rty_update_mode 
       & !dual_hold;           // :P
 
+}
+
+void screen_btn_update(){
+  screen_btns = ((
+        left_rty_btn.state 
+        & !in_rty_update_mode 
+        & !dual_hold) 
+        << 7
+      ) | ((
+        right_rty_btn.state 
+        & !in_rty_update_mode 
+        & !dual_hold) 
+        << 6
+      );
 }
 
 
@@ -196,15 +214,20 @@ static void update_input_statuses(void *arg){
       button_3  = !digitalRead(BUTTON_3_PIN);
 
       btn_rear_1 = !digitalRead(BTN_REAR_1);
-      btn_rear_2 = !digitalRead(BTN_REAR_2);
-
-      front_btn_status = (button_1 << 7) | (button_2 << 6) | (button_3 << 5);  // the bottom two buttons are ignored (used for rty)
-      rear_btn_status =  (btn_rear_1 << 4) | (btn_rear_2 << 3); 
-
-      button_status = front_btn_status | rear_btn_status ; 
+      btn_rear_2 = !digitalRead(BTN_REAR_2); 
 
       pot_input_check();
       custom_states();
+      screen_btn_update();
+
+      front_btn_status = (button_1 << 7) | (button_2 << 6) | (button_3 << 5);  // the bottom two buttons are ignored (used for rty)
+      rear_btn_status =  (btn_rear_1 << 4) | (btn_rear_2 << 3); 
+      special_btn_status = (special_1 << 2) | (special_2 << 1);  
+      
+      
+      button_status = front_btn_status | rear_btn_status | special_btn_status | in_rty_update_mode;
+
+      modes_status = (left_rty_btn.mode << 4) | (right_rty_btn.mode);  
 
 
     vTaskDelay(pdMS_TO_TICKS(1));    // This will repeat every 1 ms

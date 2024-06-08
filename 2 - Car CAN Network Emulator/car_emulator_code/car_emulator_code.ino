@@ -87,7 +87,6 @@ static void twai_receive_forever_task(void *arg)
             continue;
         }
 
-        digitalWrite(LED_BUILTIN, HIGH);
         // Process received message
         if (message.extd) {
             printf("\nExtended Format\tID: 0x%.08x\t", (int)message.identifier);
@@ -101,18 +100,8 @@ static void twai_receive_forever_task(void *arg)
             }
         }
 
-        if(message.identifier == LEDS_CONTROL_ADDR){
-          printf("\t| x:%d y:%d \n", message.data[1], message.data[2]);
-          uint8_t byte1 = message.data[0];
-          led1 = byte1 & LED_1_MASK;
-          led2 = byte1 & LED_2_MASK;
-          led3 = byte1 & LED_3_MASK;
-          led4 = byte1 & LED_4_MASK;
-          led5 = byte1 & LED_5_MASK;
-        }
 
-
-        digitalWrite(LED_BUILTIN, LOW);
+        // digitalWrite(LED_BUILTIN, LOW);
         vTaskDelay(1);  // This will allow the CPU to switch to another task :)
     }
     
@@ -134,31 +123,17 @@ static void twai_control_task(void *arg){
     ESP_ERROR_CHECK(twai_stop());               //Stop the TWAI Driver
     ESP_LOGI(EXAMPLE_TAG, "Driver stopped");
 
-    digitalWrite(LED_1_PIN, LOW);
-    digitalWrite(LED_2_PIN, LOW);
-    digitalWrite(LED_3_PIN, LOW);
-    digitalWrite(LED_4_PIN, LOW);
-    digitalWrite(LED_5_PIN, LOW);
+    // digitalWrite(LED_1_PIN, LOW);
+    // digitalWrite(LED_2_PIN, LOW);
+    // digitalWrite(LED_3_PIN, LOW);
+    // digitalWrite(LED_4_PIN, LOW);
+    // digitalWrite(LED_5_PIN, LOW);
 
     xSemaphoreGive(done_sem);
     vTaskDelete(NULL);
 }
 
-static void update_io(void *arg){
-  while(1){
-    digitalWrite(LED_1_PIN, led1);
-    digitalWrite(LED_2_PIN, led2);
-    digitalWrite(LED_3_PIN, led3);
-    digitalWrite(LED_4_PIN, led4);
-    digitalWrite(LED_5_PIN, led5);
-    vTaskDelay(pdMS_TO_TICKS(10));
-  }
-
-  vTaskDelete(NULL);
-}
-
-void app_main(void)
-{
+void app_main(void){
     //Create tasks and synchronization primitives
     tx_sem = xSemaphoreCreateBinary();
     rx_sem = xSemaphoreCreateBinary();
@@ -188,21 +163,8 @@ void app_main(void)
       vSemaphoreDelete(rx_sem); 
     }
 
-    // Small Light Show :)
-    vTaskDelay(pdMS_TO_TICKS(2000));
-    digitalWrite(LED_1_PIN, LOW);
-    vTaskDelay(pdMS_TO_TICKS(200));
-    digitalWrite(LED_2_PIN, LOW);
-    vTaskDelay(pdMS_TO_TICKS(200));
-    digitalWrite(LED_3_PIN, LOW);
-    vTaskDelay(pdMS_TO_TICKS(200));
-    digitalWrite(LED_4_PIN, LOW);
-    vTaskDelay(pdMS_TO_TICKS(200));
-    digitalWrite(LED_5_PIN, LOW);
-    vTaskDelay(pdMS_TO_TICKS(200));
-
     xTaskCreatePinnedToCore(twai_receive_forever_task,  "TWAI_rx_forever",  4096, NULL, RX_F_TASK_PRIO, NULL, tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(update_io,                  "IO_UPDATE",        4096, NULL, IO_TSK_PRIO,    NULL, tskNO_AFFINITY);
+    // xTaskCreatePinnedToCore(update_io,                  "IO_UPDATE",        4096, NULL, IO_TSK_PRIO,    NULL, tskNO_AFFINITY);
 
     ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config_full));
     ESP_LOGI(EXAMPLE_TAG, "Full Driver installed");
@@ -214,7 +176,6 @@ void app_main(void)
     xSemaphoreTake(done_sem, portMAX_DELAY);
 
 
-
     //Cleanup
     vSemaphoreDelete(rx_forever_sem);
     vSemaphoreDelete(ctrl_sem);
@@ -223,25 +184,7 @@ void app_main(void)
 
 void setup(){
   ESP_LOGI(EXAMPLE_TAG, "ESP-STARTING");
-
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-
-  pinMode(LED_1_PIN, OUTPUT);
-  pinMode(LED_2_PIN, OUTPUT);
-  pinMode(LED_3_PIN, OUTPUT);
-  pinMode(LED_4_PIN, OUTPUT);
-  pinMode(LED_5_PIN, OUTPUT);
-
-  digitalWrite(LED_1_PIN, HIGH);
-  digitalWrite(LED_2_PIN, HIGH);
-  digitalWrite(LED_3_PIN, HIGH);
-  digitalWrite(LED_4_PIN, HIGH);
-  digitalWrite(LED_5_PIN, HIGH);
-
-
   printf("start\n");
-
   app_main();
 }
 
