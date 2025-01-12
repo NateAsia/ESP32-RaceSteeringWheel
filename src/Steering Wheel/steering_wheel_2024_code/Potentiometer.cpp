@@ -9,7 +9,7 @@ void Potentiometer::setup()
     ESP_LOGI(BASE_TAG, "Setup Potentiometer on pin %d", pin);
 }
 
-uint16_t Potentiometer::update_state()
+void Potentiometer::update_state()
 {
     state = analogReadMilliVolts(pin);
 }

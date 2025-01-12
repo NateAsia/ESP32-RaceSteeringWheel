@@ -4,6 +4,8 @@
 #include "ISteeringWheel.h"
 #include "ICAN.h"
 #include "IInput.h"
+#include "Button.h"
+#include "Potentiometer.h"
 #include "RotaryButtonManager.h"
 #include "constants.h"
 #include <vector>
@@ -14,16 +16,16 @@
 class SteeringWheel : public ISteeringWheel
 {
 public:
-    SteeringWheel(ICAN &can);
+    SteeringWheel(ICAN *can);
     void setup() override;
     void start() override;
 
 private:
     // Object variables
-    ICAN &can;
-    std::vector<IInput *> face_buttons;
-    std::vector<IInput *> shift_buttons;
-    std::vector<IInput *> potentiometers;
+    ICAN *can;
+    std::vector<Button *> face_buttons;
+    std::vector<Button *> shift_buttons;
+    std::vector<Potentiometer *> potentiometers;
     std::vector<IInput *> inputs;
     RotaryButtonManager rotary_button_manager;
 
@@ -45,6 +47,7 @@ private:
     void setupInputs();
     static void inputTask(void *pvParameters);
     static void canTransmitTask(void *pvParameters);
+    void updateCustomStates();
     void prepareCANMessage(twai_message_t &message);
     void printSerialMessage();
 };

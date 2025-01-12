@@ -1,5 +1,6 @@
 #include "CANHandler.h"
 #include "esp_log.h"
+#include "constants.h"
 
 const twai_general_config_t CANHandler::g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)TX_GPIO_NUM, (gpio_num_t)RX_GPIO_NUM, TWAI_MODE_NO_ACK);
 const twai_timing_config_t CANHandler::t_config = TWAI_TIMING_CONFIG_1MBITS();

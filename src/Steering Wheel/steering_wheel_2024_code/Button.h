@@ -5,7 +5,7 @@
 
 class Button : public IInput {
 public:
-    Button(uint8_t pin, bool inverted = false);
+    Button(uint8_t pin, bool inverted);
     void setup() override;
     void update_state() override;
     bool state = 0;

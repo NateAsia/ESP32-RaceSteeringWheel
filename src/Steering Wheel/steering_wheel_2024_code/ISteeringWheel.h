@@ -5,7 +5,6 @@ class ISteeringWheel {
 public:
     virtual void setup() = 0;
     virtual void start() = 0;
-    virtual void update() = 0;
     virtual ~ISteeringWheel() = default;
 };
 

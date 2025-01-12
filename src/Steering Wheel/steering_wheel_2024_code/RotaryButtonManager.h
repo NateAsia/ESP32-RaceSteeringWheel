@@ -2,7 +2,7 @@
 #define ROTARY_BUTTON_MANAGER_H
 
 #include "IInput.h"
-#include "data_strcutures.h"
+#include "data_structures.h"
 #include <EEPROM.h>
 #include "constants.h"
 
@@ -11,7 +11,7 @@ public:
     RotaryButtonManager(bool* left_btn_state, bool* right_btn_state);  // Modified constructor
     void setup() override;
     void update_state() override;
-    bool get_in_rty_update_mode() const;
+    bool in_rty_update_mode() const;
     bool in_dual_hold() const;
     uint8_t get_modes_status() const;
     uint8_t get_screen_btns() const;

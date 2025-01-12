@@ -3,8 +3,14 @@
 
 RotaryButtonManager::RotaryButtonManager(bool *left_btn_state, bool *right_btn_state)
 {
-    left_rty_btn = {.state = left_btn_state, .num_of_modes = 4, .eeprom_location = RTY_1_EE_LOCATION};
-    right_rty_btn = {.state = right_btn_state, .num_of_modes = 4, .eeprom_location = RTY_2_EE_LOCATION};
+    left_rty_btn.state = left_btn_state;
+    left_rty_btn.num_of_modes = 4;
+    left_rty_btn.eeprom_location = RTY_1_EE_LOCATION;
+
+    right_rty_btn.state = right_btn_state;
+    right_rty_btn.num_of_modes = 4;
+    right_rty_btn.eeprom_location = RTY_2_EE_LOCATION;
+
     rotary_btn_list[0] = &left_rty_btn;
     rotary_btn_list[1] = &right_rty_btn;
 }
@@ -44,21 +50,21 @@ void RotaryButtonManager::checkForModeSwitches()
         for (auto rotary_button : rotary_btn_list)
         {
             // Start with debouncing the button
-            if (rotary_button->last_state != rotary_button->state)
+            if (rotary_button->last_state != *(rotary_button->state))
             {
                 rotary_button->time_hold_start = millis();
-                rotary_button->last_state = rotary_button->state;
+                rotary_button->last_state = *(rotary_button->state);
 
-                if (!rotary_button->state)
+                if (!*(rotary_button->state))
                 {
                     rotary_button->disable = false;
                 }
             }
 
             // Once Debounced, add to the mode counter if the button state is high (pressed) and not disabled (already pressed)
-            if ((rotary_button->state) & (!rotary_button->disable) & (millis() - rotary_button->time_hold_start > RTY_BTN_DEBOUNCE_LONG))
+            if ((*(rotary_button->state)) & (!rotary_button->disable) & (millis() - rotary_button->time_hold_start > RTY_BTN_DEBOUNCE_LONG))
             {
-                rotary_button->mode += rotary_button->state;
+                rotary_button->mode += *(rotary_button->state);
                 rotary_button->disable = true;
 
                 if (rotary_button->mode >= rotary_button->num_of_modes)
@@ -74,7 +80,7 @@ void RotaryButtonManager::enterOrExistRotaryUpdateMode()
 {
 
     // Entering and Exiting Rotary Update Mode Using two buttons
-    if (left_rty_btn.state & right_rty_btn.state)
+    if (*(left_rty_btn.state) & *(right_rty_btn.state))
     {
         if (!rty_mode_control.dual_hold)
         {
@@ -108,7 +114,7 @@ void RotaryButtonManager::checkLastBtnPress()
     // Check if any rotary buttons are in pressed state
     for (auto rotary_button : rotary_btn_list)
     {
-        if (rotary_button->state)
+        if (*(rotary_button->state))
         {
             rty_mode_control.last_btn_press = millis();
         }
@@ -137,7 +143,7 @@ void RotaryButtonManager::toggleRotaryUpdateMode()
     }
 }
 
-bool RotaryButtonManager::get_in_rty_update_mode() const
+bool RotaryButtonManager::in_rty_update_mode() const
 {
     return rty_mode_control.in_rty_update_mode;
 }
@@ -154,16 +160,16 @@ uint8_t RotaryButtonManager::get_modes_status() const
 
 uint8_t RotaryButtonManager::get_screen_btns() const
 {
-    return ((left_rty_btn.state & !rty_mode_control.in_rty_update_mode & !rty_mode_control.dual_hold) << 7) |
-           ((right_rty_btn.state & !rty_mode_control.in_rty_update_mode & !rty_mode_control.dual_hold) << 6);
+    return ((*(left_rty_btn.state) & !rty_mode_control.in_rty_update_mode & !rty_mode_control.dual_hold) << 7) |
+           ((*(right_rty_btn.state) & !rty_mode_control.in_rty_update_mode & !rty_mode_control.dual_hold) << 6);
 }
 
 bool RotaryButtonManager::in_left_special_btn_state() const
 {
-    return left_rty_btn.state & !rty_mode_control.in_rty_update_mode & !rty_mode_control.dual_hold;
+    return *(left_rty_btn.state) & !rty_mode_control.in_rty_update_mode & !rty_mode_control.dual_hold;
 }
 
 bool RotaryButtonManager::in_right_special_btn_state() const
 {
-    return right_rty_btn.state & !rty_mode_control.in_rty_update_mode & !rty_mode_control.dual_hold;
+    return *(right_rty_btn.state) & !rty_mode_control.in_rty_update_mode & !rty_mode_control.dual_hold;
 }

@@ -7,7 +7,7 @@ class Potentiometer : public IInput {
 public:
     Potentiometer(uint8_t pin);
     void setup() override;
-    uint16_t update_state() override;
+    void update_state() override;
     uint16_t state = 0;
 
 private:

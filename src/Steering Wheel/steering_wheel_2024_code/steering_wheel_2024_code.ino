@@ -6,8 +6,8 @@
 #include "CANHandler.h"
 #include "SteeringWheel.h"
 
-CANHandler canHandler();
-SteeringWheel steeringWheel(canHandler);
+CANHandler canHandler;
+SteeringWheel steeringWheel(&canHandler);
 
 void setup() {
   Serial.begin(115200);

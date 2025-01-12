@@ -1,3 +1,4 @@
+#include <Arduino.h>
 /* 
   ******************** CONSTANTS FILE ********************
 
@@ -38,6 +39,7 @@
 
     #define BTN_REAR_1      8   // Location: LEFT-REAR  (PADDLE)
     #define BTN_REAR_2      9   // Location: RIGHT-REAR (PADDLE)
+    #define INTERTED_LOGIC  true
   
   // Rotary Switch
     #define ROTARY_BTN_LIST_SIZE  2
