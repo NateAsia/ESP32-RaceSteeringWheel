@@ -9,7 +9,7 @@ SteeringWheel::SteeringWheel(ICAN &can) : can(can)
     inputs.push_back(&face_buttons);
     inputs.push_back(&shift_buttons);
     inputs.push_back(&potentiometers);
-    inputs.push_back(&rotary_button_manager);
+
 }
 
 void SteeringWheel::setup()
@@ -41,6 +41,7 @@ void SteeringWheel::setupInputs()
     potentiometers.push_back(new Potentiometer(POT_2_PIN));
 
     rotary_button_manager = RotaryButtonManager(&face_buttons[3]->state, &face_buttons[4]->state);
+    inputs.push_back(&rotary_button_manager);
 
     for (auto input : inputs)
     {
