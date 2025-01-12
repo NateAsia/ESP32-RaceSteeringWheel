@@ -24,6 +24,9 @@
 /* --------------------- TWAI / CAN Transceiver Setup ------------------ */
   #define TX_GPIO_NUM       D6        // "TX2" on the ESP32-C3
   #define RX_GPIO_NUM       D7        // "RX2" on the ESP32-C3
+  #define CAN_MSG_ID        0x661     // CAN Message ID
+  #define CAN_MSG_FREQUENCY 100       // Message Frequency (Hz)
+  #define CAN_MESSAGE_PERIOD_MS (1000/CAN_MSG_FREQUENCY)    // Message Period (ms)
 
 
 /* --------------------- Steering Wheel Inputs ------------------ */
@@ -63,17 +66,6 @@
     #define RTY_1_EE_LOCATION 0
     #define RTY_2_EE_LOCATION 1
 
-/* --------------------- Structs ------------------ */
-
-  /* Rotary Button Struct */
-    typedef struct ROTARY_BTN_T { 
-      bool    state;
-      bool    last_state;
-      bool    disable;
-      long    time_hold_start;
-      uint8_t mode;
-      uint8_t num_of_modes;
-    } ROTARY_BTN; 
 
 
     
