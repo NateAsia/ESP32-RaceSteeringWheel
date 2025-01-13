@@ -1,3 +1,7 @@
+/*
+Task to listen to the CAN bus from a separate device
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
