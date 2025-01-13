@@ -1,19 +1,7 @@
+#ifndef CONSTANTS
+#define CONSTANTS
+
 #include <Arduino.h>
-/* 
-  ******************** CONSTANTS FILE ********************
-
-  - Please use this for all variables that remain constant :)
-  - Please label definitions with useful information on the right
-  - Add new sections as needed
-
- */
-
-
-
-/* --------------------- ESP-IDF Setup ------------------ */
-  // LOG TAGS
-    #define BASE_TAG    "DUKE"  
-
 
 /* --------------------- FreeRTOS Setup ------------------ */
   #define TX_TASK_PRIO      9         // TX Task Priority 
@@ -23,37 +11,38 @@
 
 
 /* --------------------- TWAI / CAN Transceiver Setup ------------------ */
-  #define TX_GPIO_NUM       D6        // "TX2" on the ESP32-C3
-  #define RX_GPIO_NUM       D7        // "RX2" on the ESP32-C3
-  #define CAN_MSG_ID        0x661     // CAN Message ID
-  #define CAN_MSG_FREQUENCY 100       // Message Frequency (Hz)
-  #define CAN_MESSAGE_PERIOD_MS (1000/CAN_MSG_FREQUENCY)    // Message Period (ms)
+  #define CAN_MSG_ID            0x661                     // CAN Message ID
+  #define CAN_MSG_FREQUENCY     100                       // Message Frequency (Hz)
+  #define CAN_MESSAGE_PERIOD_MS (1000/CAN_MSG_FREQUENCY)  // Message Period (ms)
 
+  #define INTERTED_LOGIC  true
 
-/* --------------------- Steering Wheel Inputs ------------------ */
+/* --------------------- PINS ------------------ */
   // Buttons
-    #define BUTTON_1_PIN    4   // Location: LEFT-TOP   Color: BLUE 
-    #define BUTTON_2_PIN    5   // Location: LEFT-MID   Color: RED 
-
-    #define BUTTON_3_PIN    7   // Location: RIGHT-MID  Color: RED 
-
-    #define BTN_REAR_1      8   // Location: LEFT-REAR  (PADDLE)
-    #define BTN_REAR_2      9   // Location: RIGHT-REAR (PADDLE)
-    #define INTERTED_LOGIC  true
+    #define BUTTON_1_PIN    4     // Location: LEFT-TOP   Color: BLUE 
+    #define BUTTON_2_PIN    5     // Location: LEFT-MID   Color: RED 
+    #define BUTTON_3_PIN    7     // Location: RIGHT-MID  Color: RED 
+    #define BTN_REAR_1      8     // Location: LEFT-REAR  (PADDLE)
+    #define BTN_REAR_2      9     // Location: RIGHT-REAR (PADDLE)
   
   // Rotary Switch
-    #define ROTARY_BTN_LIST_SIZE  2
-    #define ROTARY_BTN_1_PIN      6   // Location:LEFT-LOW  Color: YELLOW 
-    #define ROTARY_BTN_2_PIN      10  // Location:RIGHT-LOW Color: YELLOW
+    #define ROTARY_BTN_1_PIN  6   // Location:LEFT-LOW  Color: YELLOW 
+    #define ROTARY_BTN_2_PIN  10  // Location:RIGHT-LOW Color: YELLOW
 
   // Analog Inputs
-    #define POT_1_PIN D1   // Location:L-R-POT 
-    #define POT_2_PIN D0   // Location:R-R-POT 
+    #define POT_1_PIN         D1  // Location:L-R-POT 
+    #define POT_2_PIN         D0  // Location:R-R-POT 
 
+  // CAN Inputs
+    #define TX_GPIO_NUM       D6  // "TX2" on the ESP32-C3
+    #define RX_GPIO_NUM       D7  // "RX2" on the ESP32-C3
+
+    #define LED_BUILTIN       2   // Blue / On ESP *** not on ESPC3
 
 /* --------------------- Steering Wheel Outputs ------------------ */
 
-    #define LED_BUILTIN 2       // Blue / On ESP *** not on ESPC3
+    #define ROTARY_BTN_LIST_SIZE  2   // Number of rotary buttons 
+                                      // (TODO: Covert rotary into object, and automatically detect number of buttens)
 
 /* --------------------- SOFTWARE DEFS ------------------ */
 
@@ -68,6 +57,6 @@
     #define RTY_1_EE_LOCATION 0
     #define RTY_2_EE_LOCATION 1
 
-
+#endif // CONSTANTS
 
     

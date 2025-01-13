@@ -12,10 +12,11 @@ void CANHandler::setup()
 {
     ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
     ESP_ERROR_CHECK(twai_start());
-    ESP_LOGI(BASE_TAG, "CAN Driver installed and started");
+    ESP_LOGD("CANHandler", "CAN Driver installed and started");
 }
 
 void CANHandler::transmit(const twai_message_t &message)
 {
+    ESP_LOGD("CANHandler", "Transmitting to 0x%x", message.identifier);
     ESP_ERROR_CHECK(twai_transmit(&message, portMAX_DELAY));
 }

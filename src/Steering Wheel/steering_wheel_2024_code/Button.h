@@ -8,7 +8,7 @@ public:
     Button(uint8_t pin, bool inverted);
     void setup() override;
     void update_state() override;
-    bool state = 0;
+    bool state = false;
 
 
 private:

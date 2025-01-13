@@ -27,7 +27,7 @@ private:
     std::vector<Button *> shift_buttons;
     std::vector<Potentiometer *> potentiometers;
     std::vector<IInput *> inputs;
-    RotaryButtonManager rotary_button_manager;
+    RotaryButtonManager *rotary_button_manager;
 
     // State variables
     uint16_t pot_v;

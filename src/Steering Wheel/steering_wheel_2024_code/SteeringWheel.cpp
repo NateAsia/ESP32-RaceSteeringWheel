@@ -1,3 +1,4 @@
+#include "Print.h"
 #include "SteeringWheel.h"
 #include "stdio.h"
 #include "esp_log.h"
@@ -6,12 +7,12 @@
 #include "Button.h"
 #include "Potentiometer.h"
 
-SteeringWheel::SteeringWheel(ICAN *can) : can(can), rotary_button_manager(nullptr, nullptr) {}
+SteeringWheel::SteeringWheel(ICAN *can) : can(can) {}
 
 void SteeringWheel::setup()
 {
     setupInputs();
-    ESP_LOGI(BASE_TAG, "Steering Wheel Setup Complete");
+    ESP_LOGI("SteeringWheel", "Steering Wheel Setup Complete");
 }
 
 void SteeringWheel::start()
@@ -19,7 +20,7 @@ void SteeringWheel::start()
     // Create tasks
     xTaskCreatePinnedToCore(inputTask, "InputTask", 4096, this, INPUT_TASK_PRIO, NULL, tskNO_AFFINITY);
     xTaskCreatePinnedToCore(canTransmitTask, "CANTransmitTask", 4096, this, TX_TASK_PRIO, NULL, tskNO_AFFINITY);
-    ESP_LOGI(BASE_TAG, "Steering Wheel Starting");
+    ESP_LOGI("SteeringWheel", "Steering Wheel Starting");
 }
 
 void SteeringWheel::setupInputs()
@@ -36,18 +37,18 @@ void SteeringWheel::setupInputs()
     potentiometers.push_back(new Potentiometer(POT_1_PIN));
     potentiometers.push_back(new Potentiometer(POT_2_PIN));
 
-    rotary_button_manager = RotaryButtonManager(&face_buttons[3]->state, &face_buttons[4]->state);
+    rotary_button_manager = new RotaryButtonManager(&(face_buttons[3]->state), &(face_buttons[4]->state));
 
     inputs.insert(inputs.end(), face_buttons.begin(), face_buttons.end());
     inputs.insert(inputs.end(), shift_buttons.begin(), shift_buttons.end());
     inputs.insert(inputs.end(), potentiometers.begin(), potentiometers.end());
-    inputs.push_back(&rotary_button_manager);
+    inputs.push_back(rotary_button_manager);
 
-    for (auto input : inputs)
+    for (auto& input : inputs)
     {
         input->setup();
     }
-    ESP_LOGI(BASE_TAG, "Inputs Setup Complete");
+    ESP_LOGI("SteeringWheel", "Inputs Setup Complete");
 }
 
 void SteeringWheel::inputTask(void *pvParameters)
@@ -55,7 +56,7 @@ void SteeringWheel::inputTask(void *pvParameters)
     SteeringWheel *wheel = static_cast<SteeringWheel *>(pvParameters);
     while (1)
     {
-        for (auto input : wheel->inputs)
+        for (auto& input : wheel->inputs)
         {
             input->update_state(); // Update all input states
         }
@@ -74,10 +75,10 @@ void SteeringWheel::inputTask(void *pvParameters)
             (wheel->special_1 << 2) | (wheel->special_2 << 1);
 
         wheel->button_status =
-            wheel->front_btn_status | wheel->rear_btn_status | wheel->special_btn_status | wheel->rotary_button_manager.in_rty_update_mode();
+            wheel->front_btn_status | wheel->rear_btn_status | wheel->special_btn_status | wheel->rotary_button_manager->in_rty_update_mode();
 
-        wheel->modes_status = wheel->rotary_button_manager.get_modes_status();
-        wheel->screen_btns = wheel->rotary_button_manager.get_screen_btns();
+        wheel->modes_status = wheel->rotary_button_manager->get_modes_status();
+        wheel->screen_btns = wheel->rotary_button_manager->get_screen_btns();
 
         vTaskDelay(pdMS_TO_TICKS(1));
     }
@@ -86,10 +87,10 @@ void SteeringWheel::inputTask(void *pvParameters)
 void SteeringWheel::updateCustomStates()
 {
     special_1 =
-        (potentiometers[0]->state > 2600) & (potentiometers[1]->state > 2600) & rotary_button_manager.in_left_special_btn_state();
+        (potentiometers[0]->state > 2600) & (potentiometers[1]->state > 2600) & rotary_button_manager->in_left_special_btn_state();
 
     special_2 =
-        (potentiometers[0]->state > 2600) & (potentiometers[1]->state > 2600) & rotary_button_manager.in_right_special_btn_state();
+        (potentiometers[0]->state > 2600) & (potentiometers[1]->state > 2600) & rotary_button_manager->in_right_special_btn_state();
 }
 
 void SteeringWheel::canTransmitTask(void *pvParameters)
@@ -124,41 +125,42 @@ void SteeringWheel::prepareCANMessage(twai_message_t &message)
 }
 
 void SteeringWheel::printSerialMessage(){
-  Serial.print("BTNS:");
+  Serial.print("<!-- STATUS -->");
+  Serial.print(" BTNS: ");
   Serial.print(face_buttons[0]->state);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(face_buttons[1]->state);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(face_buttons[3]->state);
-  Serial.print("@");
+  Serial.print("-");
 
   Serial.print(face_buttons[2]->state);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(face_buttons[4]->state);
-  Serial.print("@");
+  Serial.print("-");
 
   Serial.print(shift_buttons[0]->state);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(shift_buttons[1]->state);
 
-  Serial.print(":POTS:");
+  Serial.print(" POTS: ");
   Serial.print(potentiometers[0]->state);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(potentiometers[1]->state);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(pot_v);
 
-  Serial.print(":MODES:");
-  Serial.print(rotary_button_manager.in_rty_update_mode());
-  Serial.print("@");
-  Serial.print(rotary_button_manager.in_dual_hold());
-  Serial.print("@");
+  Serial.print(" MODES: ");
+  Serial.print(rotary_button_manager->in_rty_update_mode());
+  Serial.print("-");
+  Serial.print(rotary_button_manager->in_dual_hold());
+  Serial.print("-");
   Serial.print((modes_status & 0xF0) >>4);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(modes_status & 0x0F);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(special_1);
-  Serial.print("@");
+  Serial.print("-");
   Serial.print(special_2);
   Serial.print("\n");
 }

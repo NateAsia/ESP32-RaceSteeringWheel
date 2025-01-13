@@ -1,5 +1,6 @@
 #include "RotaryButtonManager.h"
 #include "esp_log.h"
+#include "constants.h"
 
 RotaryButtonManager::RotaryButtonManager(bool *left_btn_state, bool *right_btn_state)
 {
@@ -18,6 +19,7 @@ RotaryButtonManager::RotaryButtonManager(bool *left_btn_state, bool *right_btn_s
 void RotaryButtonManager::setup()
 {
     setupEEPROM();
+    ESP_LOGD("RotaryButtonManager", "setup complete");
 }
 
 void RotaryButtonManager::setupEEPROM()
@@ -27,11 +29,12 @@ void RotaryButtonManager::setupEEPROM()
     {
         rotary_button->mode = EEPROM.readByte(rotary_button->eeprom_location);
     }
-    ESP_LOGI(BASE_TAG, "EEPROM Setup Complete");
+    ESP_LOGI("RotaryButtonManager", "EEPROM Setup Complete");
 }
 
 void RotaryButtonManager::update_state()
 {
+    ESP_LOGV("RotaryButtonManager", "updating");
     updateRotaryButtons();
 }
 
@@ -112,12 +115,12 @@ void RotaryButtonManager::enterOrExistRotaryUpdateMode()
 void RotaryButtonManager::checkLastBtnPress()
 {
     // Check if any rotary buttons are in pressed state
-    for (auto rotary_button : rotary_btn_list)
-    {
-        if (*(rotary_button->state))
-        {
-            rty_mode_control.last_btn_press = millis();
-        }
+    for (auto& rotary_button : rotary_btn_list)
+    {    
+      if (*(rotary_button->state))
+      {
+          rty_mode_control.last_btn_press = millis();
+      }
     }
 }
 
@@ -128,7 +131,7 @@ void RotaryButtonManager::toggleRotaryUpdateMode()
 
     if (!rty_mode_control.in_rty_update_mode)
     { // When we exit rotary update mode, update the EEPROM
-        for (auto rotary_button : rotary_btn_list)
+        for (auto& rotary_button : rotary_btn_list)
         {
             EEPROM.writeByte(rotary_button->eeprom_location, rotary_button->mode);
         }
@@ -136,7 +139,7 @@ void RotaryButtonManager::toggleRotaryUpdateMode()
     }
     else
     {
-        for (auto rotary_button : rotary_btn_list)
+        for (auto& rotary_button : rotary_btn_list)
         {
             rotary_button->disable = true;
         }
