@@ -40,6 +40,7 @@ class SteeringWheelGUI:
 
     def update_ui_status(self, data):
         self.ui_components.update_serial_monitor_label(data)
+        # TODO Update for new data format
         sections = data.split(":")
         for i, item in enumerate(sections):
             if item.startswith("BTNS"):
