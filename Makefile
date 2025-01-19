@@ -23,3 +23,23 @@ gui:
 	@echo "$(GREEN)Starting GUI...$(RESET)"
 	@python src/GUI/main.py
 
+# Run GUI tests with standard verbose output
+test-gui:
+	@echo "$(YELLOW)Running GUI tests...$(RESET)"
+	@if [ -z "$$VIRTUAL_ENV" ]; then \
+		echo "$(RED)Not in a virtual environment. Please run 'make shell' first.$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)Starting GUI tests...$(RESET)"
+	@cd src/GUI && python -m unittest discover tests -v -b
+	@echo "$(GREEN)GUI tests complete$(RESET)"
+
+
+# Run a specific test file or test case
+# Usage: make test-gui-single TEST=test_serial_handler.py
+test-gui-single:
+	@echo "$(YELLOW)Running specific test: $(TEST)$(RESET)"
+	@cd src/GUI && python -m unittest tests/$(TEST) -v
+
+# Run all tests
+test: test-gui

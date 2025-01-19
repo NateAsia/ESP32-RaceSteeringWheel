@@ -24,11 +24,13 @@ class SteeringWheelGUI:
         self.ui_components.setup_labels()
 
     def setup_menu(self):
+        # TODO: Move to UI Components class
         menu_bar = tk.Menu(self.master)
         menu_bar.add_cascade(label="Select Port", menu=self.create_port_menu())
         self.master.config(menu=menu_bar)
 
     def create_port_menu(self):
+        # TODO: Move to UI Components class
         menu = tk.Menu(self.master, tearoff=0)
         ports = [p for p in os.listdir("/dev") if p.startswith("cu")]
         for port in ports:
@@ -39,6 +41,8 @@ class SteeringWheelGUI:
         self.serial_handler.set_port("/dev/" + port)
 
     def update_ui_status(self, data):
+        # TODO: Separate updates into method in UI Components class
+        # and pass a dictionary of data to update
         self.ui_components.update_serial_monitor_label(data)
         # TODO Update for new data format
         sections = data.split(":")
