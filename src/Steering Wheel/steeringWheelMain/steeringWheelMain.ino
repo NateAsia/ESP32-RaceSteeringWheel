@@ -21,7 +21,6 @@ void communication_setup() {
 void setup() {
   communication_setup();
   ESP_LOGI("setup", "ESP-STARTING\n");
-  canHandler.setup();
   steeringWheel.setup();
   steeringWheel.start();
 }

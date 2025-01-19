@@ -11,6 +11,7 @@ SteeringWheel::SteeringWheel(ICAN *can) : can(can) {}
 
 void SteeringWheel::setup()
 {
+    can->setup();
     setupInputs();
     ESP_LOGI("SteeringWheel", "Steering Wheel Setup Complete");
 }
