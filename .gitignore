@@ -2,3 +2,7 @@
 .venv
 .vscode
 __pycache__/
+
+
+# Steering Wheel Test Suite – not ready yet
+src/Steering Wheel/steeringWheelMain/tests
