@@ -2,7 +2,7 @@
 
 This repository contains the engineering design, implementation, and validation of a digital racing steering wheel for Formula Student style vehicles.
 
-## Project Overview
+## Project Overview 
 
 The Racing Steering Wheel project aims to create a sophisticated, digital steering wheel for use in Formula Student competitions. It includes both hardware design and software implementation to provide a responsive and feature-rich interface for race car drivers.
 
